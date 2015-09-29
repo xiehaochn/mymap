@@ -7,12 +7,16 @@ import com.baidu.location.LocationClientOption;
 import com.baidu.location.LocationClientOption.LocationMode;
 import com.baidu.mapapi.SDKInitializer;
 import com.baidu.mapapi.map.BaiduMap;
+
 import com.baidu.mapapi.map.MapStatusUpdate;
 import com.baidu.mapapi.map.MapStatusUpdateFactory;
 import com.baidu.mapapi.map.MapView;
+
+import com.baidu.mapapi.map.MyLocationData;
 import com.baidu.mapapi.model.LatLng;
 
 import android.app.Activity;
+
 import android.os.Bundle;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -31,6 +35,7 @@ public class MainActivity extends Activity implements OnClickListener {
 	public LatLng my_point;
 	public int iss;
 	public int error_type;
+
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
@@ -45,6 +50,7 @@ public class MainActivity extends Activity implements OnClickListener {
 		locationClient.registerLocationListener( myListener );
 		initLocation();
 		locationClient.start();
+		
 		
 	}
 
@@ -107,7 +113,12 @@ public class MainActivity extends Activity implements OnClickListener {
 		@Override
 		public void onReceiveLocation(BDLocation location) {
 			// TODO Auto-generated method stub
-			
+			baiduMap.setMyLocationEnabled(true);
+			MyLocationData locData = new MyLocationData.Builder()  
+					.accuracy(location.getRadius())
+				    .direction(100).latitude(location.getLatitude())  
+				    .longitude(location.getLongitude()).build();  
+			baiduMap.setMyLocationData(locData); 
             error_type=location.getLocType();
             my_point=new LatLng(location.getLatitude(),location.getLongitude());
             if (location.getLocType() == BDLocation.TypeGpsLocation){// GPS定位结果                             
