@@ -7,27 +7,38 @@ import com.baidu.location.LocationClientOption;
 import com.baidu.location.LocationClientOption.LocationMode;
 import com.baidu.mapapi.SDKInitializer;
 import com.baidu.mapapi.map.BaiduMap;
-
+import com.baidu.mapapi.map.BitmapDescriptor;
+import com.baidu.mapapi.map.BitmapDescriptorFactory;
 import com.baidu.mapapi.map.MapStatusUpdate;
 import com.baidu.mapapi.map.MapStatusUpdateFactory;
 import com.baidu.mapapi.map.MapView;
-
+import com.baidu.mapapi.map.Marker;
+import com.baidu.mapapi.map.MarkerOptions;
 import com.baidu.mapapi.map.MyLocationData;
+import com.baidu.mapapi.map.OverlayOptions;
 import com.baidu.mapapi.model.LatLng;
+import com.baidu.mapapi.search.geocode.GeoCodeOption;
+import com.baidu.mapapi.search.geocode.GeoCodeResult;
+import com.baidu.mapapi.search.geocode.GeoCoder;
+import com.baidu.mapapi.search.geocode.OnGetGeoCoderResultListener;
+import com.baidu.mapapi.search.geocode.ReverseGeoCodeResult;
 
 
 import android.app.Activity;
-
+import android.content.Intent;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.view.Window;
+import android.widget.Button;
+import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.Toast;
 
-public class MainActivity extends Activity implements OnClickListener {
+public class MainActivity extends Activity implements OnClickListener, OnGetGeoCoderResultListener {
 	private MapView mapView=null;
 	private BaiduMap baiduMap;
 	private LocationClient locationClient;
@@ -35,6 +46,10 @@ public class MainActivity extends Activity implements OnClickListener {
 	private ImageButton my_location;
 	private ImageButton traffic;
 	private ImageButton sattelite;
+	private ImageButton search;
+	private Button select_city;
+	private EditText search_text;
+	private String city;
 	public LatLng my_point;
 	public int iss;
 	public int error_type;
@@ -53,6 +68,11 @@ public class MainActivity extends Activity implements OnClickListener {
         traffic.setOnClickListener(this);
         sattelite=(ImageButton)findViewById(R.id.normal_satellite);
         sattelite.setOnClickListener(this);
+        search=(ImageButton)findViewById(R.id.search);
+        search.setOnClickListener(this);
+        select_city=(Button)findViewById(R.id.select_city);
+        select_city.setOnClickListener(this);
+        search_text=(EditText)findViewById(R.id.title_search);
 		locationClient = new LocationClient(getApplicationContext());
 		locationClient.registerLocationListener( myListener );
 		initLocation();
@@ -179,11 +199,65 @@ public class MainActivity extends Activity implements OnClickListener {
 			}else{
 				Toast.makeText(this, "定位失败"+"\n"+"error type:"+error_type, Toast.LENGTH_SHORT).show();
 			}
-				
+				break;
 			
+		}
+		case(R.id.select_city):{
+			Intent intent=new Intent(MainActivity.this,SelectCity.class);
+			startActivityForResult(intent,1);
+			break;
+		}
+		case(R.id.search):{
+			if(city!=null){
+			String text=search_text.getText().toString();
+			GeoCoder coder =GeoCoder.newInstance();
+			GeoCodeOption search_address=new GeoCodeOption();
+			search_address.city(city);
+			search_address.address(text);
+			coder.geocode(search_address);
+			coder.setOnGetGeoCodeResultListener(this);
+			}
+			else{
+				Toast.makeText(MainActivity.this, "请先选择城市", Toast.LENGTH_SHORT).show();
+			}
+			break;
 		}
 		default:
 			break;
 		}
+	}
+	@Override
+	protected void onActivityResult(int requestCode,int resultCode,Intent data){
+		switch(requestCode){
+		case 1:
+			if (resultCode==RESULT_OK){
+				city=data.getStringExtra("city_data");
+				
+			}
+				break;
+		default:
+		}
+	}
+
+	@Override
+	public void onGetGeoCodeResult(GeoCodeResult arg0) {
+		// TODO Auto-generated method stub
+		LatLng search_point=arg0.getLocation();
+		if(search_point!=null){
+		BitmapDescriptor bitmap = BitmapDescriptorFactory.fromResource(R.drawable.icon_marka1);		
+		MapStatusUpdate mMapStatusUpdate = MapStatusUpdateFactory.newLatLng(search_point);
+		baiduMap.animateMapStatus(mMapStatusUpdate);
+		OverlayOptions search_point_overlay = new MarkerOptions().position(search_point).icon(bitmap);				
+		Marker my_marker = (Marker) baiduMap.addOverlay(search_point_overlay);
+		}
+		else{
+			Toast.makeText(MainActivity.this, "未能找到结果", Toast.LENGTH_SHORT).show();
+		}
+	}
+
+	@Override
+	public void onGetReverseGeoCodeResult(ReverseGeoCodeResult arg0) {
+		// TODO Auto-generated method stub
+		
 	}
 }
